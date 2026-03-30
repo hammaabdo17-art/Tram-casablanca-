@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CasaTram — Casablanca Tramway</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --border: #1e2128;
+    --t1: #3b82f6;
+    --t2: #ef4444;
+    --t3: #22c55e;
+    --t4: #f97316;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --card: #161920;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* BACKGROUND GRID */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* HEADER */
+  header {
+    padding: 36px 0 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--t1); }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.25);
+    color: #22c55e;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 100px;
+    letter-spacing: 0.5px;
+  }
+  .live-dot {
+    width: 7px; height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  /* CLOCK */
+  .clock-section {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .clock {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(48px, 12vw, 80px);
+    font-weight: 800;
+    letter-spacing: -3px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .clock-date {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  /* LINE TABS */
+  .line-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .line-tab {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .line-tab:hover { border-color: var(--muted); transform: translateY(-1px); }
+  .line-tab.active { border-color: currentColor; background: rgba(255,255,255,0.04); }
+  .line-tab[data-line="T1"] { color: var(--t1); }
+  .line-tab[data-line="T1"].active { box-shadow: 0 0 0 1px var(--t1), 0 4px 20px rgba(59,130,246,0.15); }
+  .line-tab[data-line="T2"] { color: var(--t2); }
+  .line-tab[data-line="T2"].active { box-shadow: 0 0 0 1px var(--t2), 0 4px 20px rgba(239,68,68,0.15); }
+  .line-tab[data-line="T3"] { color: var(--t3); }
+  .line-tab[data-line="T3"].active { box-shadow: 0 0 0 1px var(--t3), 0 4px 20px rgba(34,197,94,0.15); }
+  .line-tab[data-line="T4"] { color: var(--t4); }
+  .line-tab[data-line="T4"].active { box-shadow: 0 0 0 1px var(--t4), 0 4px 20px rgba(249,115,22,0.15); }
+
+  .tab-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    display: block;
+  }
+  .tab-route {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+
+  /* STATUS CARD */
+  .status-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .status-info { flex: 1; min-width: 200px; }
+  .status-line-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .status-route { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  .status-running {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 100px;
+  }
+  .status-running.active {
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: #22c55e;
+  }
+  .status-running.inactive {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #ef4444;
+  }
+
+  /* NEXT TRAMS */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .trams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  @media(max-width: 500px) { .trams-grid { grid-template-columns: 1fr; } }
+
+  .direction-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .direction-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .direction-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .next-tram {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .next-tram:last-child { border-bottom: none; padding-bottom: 0; }
+  .next-tram:first-of-type .tram-time { font-size: 24px; font-weight: 700; font-family: 'Syne', sans-serif; }
+
+  .tram-time { font-size: 18px; font-weight: 600; font-family: 'Syne', sans-serif; }
+  .tram-wait {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+  .tram-wait.now { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .tram-wait.soon { background: rgba(249,115,22,0.12); color: #f97316; }
+  .tram-wait.later { background: rgba(107,114,128,0.15); color: var(--muted); }
+
+  /* SCHEDULE TABLE */
+  .schedule-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+
+  .schedule-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .schedule-header-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
+
+  .freq-badge {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+
+  .schedule-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(30,33,40,0.6);
+    gap: 16px;
+    transition: background 0.15s;
+  }
+  .schedule-row:hover { background: rgba(255,255,255,0.02); }
+  .schedule-row:last-child { border-bottom: none; }
+  .schedule-row.current { background: rgba(59,130,246,0.06); border-left: 3px solid currentColor; }
+
+  .sched-time { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 15px; min-width: 55px; }
+  .sched-period { color: var(--muted); font-size: 13px; flex: 1; }
+  .sched-freq { font-size: 12px; color: var(--muted); }
+  .sched-status { font-size: 12px; padding: 3px 10px; border-radius: 100px; }
+  .sched-status.active { background: rgba(34,197,94,0.1); color: #22c55e; }
+  .sched-status.upcoming { background: rgba(107,114,128,0.1); color: var(--muted); }
+  .sched-status.past { background: transparent; color: #374151; }
+
+  /* INFO ROW */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  @media(max-width: 500px) { .info-grid { grid-template-columns: 1fr 1fr; } }
+
+  .info-tile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .info-tile-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .info-tile-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; }
+  .info-tile-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* STOPS LIST */
+  .stops-list {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .stops-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .stop-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(30,33,40,0.6);
+    font-size: 13px;
+  }
+  .stop-row:last-child { border-bottom: none; }
+  .stop-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 2px solid;
+    flex-shrink: 0;
+  }
+  .stop-name { flex: 1; }
+  .stop-interchange {
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 100px;
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo">Casa<span>Tram</span></div>
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+  </header>
+
+  <div class="clock-section">
+    <div class="clock" id="clock">00:00:00</div>
+    <div class="clock-date" id="clock-date">MONDAY · CASABLANCA</div>
+  </div>
+
+  <!-- LINE TABS -->
+  <div class="line-tabs">
+    <div class="line-tab active" data-line="T1" onclick="selectLine('T1')">
+      <span class="tab-label">T1</span>
+      <div class="tab-route">Sidi Moumen ↔ Lissasfa</div>
+    </div>
+    <div class="line-tab" data-line="T2" onclick="selectLine('T2')">
+      <span class="tab-label">T2</span>
+      <div class="tab-route">Sidi Bernoussi ↔ Ain Diab</div>
+    </div>
+    <div class="line-tab" data-line="T3" onclick="selectLine('T3')">
+      <span class="tab-label">T3</span>
+      <div class="tab-route">Casa Port ↔ Hay El Wahda</div>
+    </div>
+    <div class="line-tab" data-line="T4" onclick="selectLine('T4')">
+      <span class="tab-label">T4</span>
+      <div class="tab-route">Ligue Arabe ↔ M. Erradi</div>
+    </div>
+  </div>
+
+  <!-- STATUS CARD -->
+  <div class="status-card">
+    <div class="status-info">
+      <div class="status-line-name" id="status-name">T1 — Ligne 1</div>
+      <div class="status-route" id="status-route">Sidi Moumen → Lissasfa · 23.5 km · 38 arrêts</div>
+    </div>
+    <div class="status-running active" id="status-badge">
+      <div class="live-dot"></div>
+      <span id="status-text">En service</span>
+    </div>
+  </div>
+
+  <!-- NEXT TRAMS -->
+  <div class="section-title">Prochains passages</div>
+  <div class="trams-grid" id="trams-grid"></div>
+
+  <!-- INFO TILES -->
+  <div class="info-grid" id="info-grid"></div>
+
+  <!-- SCHEDULE -->
+  <div class="section-title">Horaires journaliers</div>
+  <div class="schedule-block">
+    <div class="schedule-header">
+      <div class="schedule-header-title" id="sched-title">Planning T1</div>
+      <div class="freq-badge" id="freq-badge">Fréquence: ~10 min</div>
+    </div>
+    <div id="schedule-rows"></div>
+  </div>
+
+  <!-- STOPS -->
+  <div class="section-title">Arrêts</div>
+  <div class="stops-list">
+    <div class="stops-header" id="stops-header">Stations T1</div>
+    <div id="stops-list"></div>
+  </div>
+
+  <footer>CasaTram · Données basées sur les horaires officiels Casa Tramway · Mis à jour en temps réel</footer>
+</div>
+
+<script>
+const LINES = {
+  T1: {
+    name: 'T1 — Ligne 1',
+    route: 'Sidi Moumen → Lissasfa · 23.5 km · 38 arrêts',
+    color: '#3b82f6',
+    freq: '~8 min (pointe) · ~12 min (creuse)',
+    km: '23.5 km',
+    stops: '38',
+    duration: '73 min',
+    termA: 'Sidi Moumen',
+    termB: 'Lissasfa',
+    firstA: '05:30', lastA: '22:30',
+    firstB: '06:00', lastB: '22:30',
+    schedule: [
+      { from: '05:30', to: '07:00', label: 'Début de service', freq: '12 min' },
+      { from: '07:00', to: '09:30', label: 'Heure de pointe matin', freq: '8 min' },
+      { from: '09:30', to: '12:00', label: 'Service normal', freq: '10 min' },
+      { from: '12:00', to: '14:00', label: 'Heure de pointe midi', freq: '8 min' },
+      { from: '14:00', to: '17:00', label: 'Service normal', freq: '10 min' },
+      { from: '17:00', to: '20:00', label: 'Heure de pointe soir', freq: '8 min' },
+      { from: '20:00', to: '22:30', label: 'Service soirée', freq: '12 min' },
+    ],
+    stations: [
+      { name: 'Sidi Moumen', interchange: null },
+      { name: 'Hay Raja', interchange: null },
+      { name: 'Cimetière Sidi Moumen', interchange: null },
+      { name: 'Ibn Tachfine', interchange: null },
+      { name: 'Carrières Centrales', interchange: 'T2' },
+      { name: 'Casa Voyageurs', interchange: 'T2 · Train' },
+      { name: 'Hay Hassani', interchange: null },
+      { name: 'Al Fida', interchange: 'T2' },
+      { name: 'Abdelmoumen', interchange: 'T2 · T4' },
+      { name: 'Facultés', interchange: null },
+      { name: 'Laymoun', interchange: null },
+      { name: 'Floride', interchange: null },
+      { name: 'Lissasfa', interchange: null },
+    ]
+  },
+  T2: {
+    name: 'T2 — Ligne 2',
+    route: 'Sidi Bernoussi → Ain Diab Plage · 22.5 km · 33 arrêts',
+    color: '#ef4444',
+    freq: '~8 min (pointe) · ~12 min (creuse)',
+    km: '22.5 km',
+    stops: '33',
+    duration: '68 min',
+    termA: 'Sidi Bernoussi',
+    termB: 'Ain Diab Plage',
+    firstA: '05:30', lastA: '22:30',
+    firstB: '06:00', lastB: '22:30',
+    schedule: [
+      { from: '05:30', to: '07:00', label: 'Début de service', freq: '12 min' },
+      { from: '07:00', to: '09:30', label: 'Heure de pointe matin', freq: '8 min' },
+      { from: '09:30', to: '12:00', label: 'Service normal', freq: '10 min' },
+      { from: '12:00', to: '14:00', label: 'Heure de pointe midi', freq: '9 min' },
+      { from: '14:00', to: '17:00', label: 'Service normal', freq: '10 min' },
+      { from: '17:00', to: '20:00', label: 'Heure de pointe soir', freq: '8 min' },
+      { from: '20:00', to: '22:30', label: 'Service soirée', freq: '12 min' },
+    ],
+    stations: [
+      { name: 'Sidi Bernoussi', interchange: null },
+      { name: 'Ain Sbaa Préfecture', interchange: null },
+      { name: 'Al Amane', interchange: null },
+      { name: 'Al Wifaq', interchange: null },
+      { name: 'Dar Lamane', interchange: null },
+      { name: 'Carrières Centrales', interchange: 'T1' },
+      { name: 'Kissariat Hay Mohammadi', interchange: null },
+      { name: 'Mdakra', interchange: null },
+      { name: 'Hay Adil', interchange: null },
+      { name: 'Derb Milan', interchange: null },
+      { name: 'Casa Voyageurs', interchange: 'T1 · Train' },
+      { name: 'Al Fida', interchange: 'T1' },
+      { name: 'Abdelmoumen', interchange: 'T1 · T4' },
+      { name: 'Hay Hassani', interchange: null },
+      { name: 'Ain Diab', interchange: null },
+      { name: 'Ain Diab Plage', interchange: null },
+    ]
+  },
+  T3: {
+    name: 'T3 — Ligne 3',
+    route: 'Casa Port → Hay El Wahda · 14 km · 20 arrêts',
+    color: '#22c55e',
+    freq: '~10 min (pointe) · ~12 min (creuse)',
+    km: '14 km',
+    stops: '20',
+    duration: '42 min',
+    termA: 'Casa Port',
+    termB: 'Hay El Wahda',
+    firstA: '06:00', lastA: '22:30',
+    firstB: '05:30', lastB: '22:30',
+    schedule: [
+      { from: '05:30', to: '07:00', label: 'Début de service', freq: '12 min' },
+      { from: '07:00', to: '09:30', label: 'Heure de pointe matin', freq: '10 min' },
+      { from: '09:30', to: '17:00', label: 'Service normal', freq: '12 min' },
+      { from: '17:00', to: '20:00', label: 'Heure de pointe soir', freq: '10 min' },
+      { from: '20:00', to: '22:30', label: 'Service soirée', freq: '12 min' },
+    ],
+    stations: [
+      { name: 'Casa Port', interchange: 'Train · T4' },
+      { name: 'Place de la Victoire', interchange: null },
+      { name: 'Mohammed Smiha', interchange: null },
+      { name: 'Moulay Abderrahmane', interchange: null },
+      { name: 'Boulevard Mohammed VI', interchange: null },
+      { name: 'Idriss El Allam', interchange: null },
+      { name: 'Abdelkader Essahraoui', interchange: null },
+      { name: '10 Mars', interchange: null },
+      { name: 'Al Wahda', interchange: null },
+      { name: 'Hay El Wahda', interchange: null },
+    ]
+  },
+  T4: {
+    name: 'T4 — Ligne 4',
+    route: 'Parc Ligue Arabe → Mohammed Erradi · 12.5 km · 19 arrêts',
+    color: '#f97316',
+    freq: '~10 min (pointe) · ~12 min (creuse)',
+    km: '12.5 km',
+    stops: '19',
+    duration: '69 min',
+    termA: 'Parc Ligue Arabe',
+    termB: 'Mohammed Erradi',
+    firstA: '06:00', lastA: '22:30',
+    firstB: '05:30', lastB: '22:30',
+    schedule: [
+      { from: '05:30', to: '07:00', label: 'Début de service', freq: '12 min' },
+      { from: '07:00', to: '09:30', label: 'Heure de pointe matin', freq: '10 min' },
+      { from: '09:30', to: '17:00', label: 'Service normal', freq: '12 min' },
+      { from: '17:00', to: '20:00', label: 'Heure de pointe soir', freq: '10 min' },
+      { from: '20:00', to: '22:30', label: 'Service soirée', freq: '12 min' },
+    ],
+    stations: [
+      { name: 'Parc Ligue Arabe', interchange: 'T3' },
+      { name: 'Mohammed Jaudar', interchange: null },
+      { name: 'Hay Al Falah', interchange: null },
+      { name: 'Abdelmoumen', interchange: 'T1 · T2' },
+      { name: 'Idriss Al Harti', interchange: null },
+      { name: 'Mohammed Bouziane', interchange: null },
+      { name: 'Hay Assalama', interchange: null },
+      { name: 'Nile Blvd', interchange: null },
+      { name: 'Chtaiba Garden', interchange: null },
+      { name: 'Hay Tissir', interchange: null },
+      { name: 'Mohammed Erradi', interchange: null },
+    ]
+  }
+};
+
+let currentLine = 'T1';
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function getNow() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  return { h, m, s, totalMin: h * 60 + m };
+}
+
+function timeToMin(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function minToTime(min) {
+  return `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+}
+
+function isRunning(line) {
+  const { totalMin } = getNow();
+  const firstMin = timeToMin(line.firstA);
+  const lastMin = timeToMin(line.lastA);
+  return totalMin >= firstMin && totalMin <= lastMin;
+}
+
+function getNextTrams(line, direction) {
+  const { totalMin } = getNow();
+  const isA = direction === 'A';
+  const firstMin = timeToMin(isA ? line.firstA : line.firstB);
+  const lastMin = timeToMin(isA ? line.lastA : line.lastB);
+
+  // Find the frequency for current period
+  let freq = 10;
+  for (const s of line.schedule) {
+    const fromMin = timeToMin(s.from);
+    const toMin = timeToMin(s.to);
+    if (totalMin >= fromMin && totalMin < toMin) {
+      freq = parseInt(s.freq);
+      break;
+    }
+  }
+
+  const trams = [];
+  let t = firstMin;
+  while (t <= lastMin) {
+    if (t >= totalMin - 1) trams.push(t);
+    t += freq;
+  }
+  return trams.slice(0, 3);
+}
+
+function waitLabel(diffMin) {
+  if (diffMin <= 1) return ['now', 'Maintenant'];
+  if (diffMin <= 5) return ['soon', diffMin + ' min'];
+  return ['later', diffMin + ' min'];
+}
+
+function renderLine(key) {
+  const line = LINES[key];
+  const color = line.color;
+
+  // Status
+  document.getElementById('status-name').textContent = line.name;
+  document.getElementById('status-route').textContent = line.route;
+  const running = isRunning(line);
+  const badge = document.getElementById('status-badge');
+  const statusText = document.getElementById('status-text');
+  badge.className = 'status-running ' + (running ? 'active' : 'inactive');
+  statusText.textContent = running ? 'En service' : 'Hors service';
+
+  // Next trams grid
+  const { totalMin } = getNow();
+  const tramsGrid = document.getElementById('trams-grid');
+  const dirs = [
+    { dir: 'A', label: 'Direction', name: line.termB, trams: getNextTrams(line, 'A') },
+    { dir: 'B', label: 'Direction', name: line.termA, trams: getNextTrams(line, 'B') },
+  ];
+
+  tramsGrid.innerHTML = dirs.map(d => `
+    <div class="direction-card">
+      <div class="direction-label">${d.label}</div>
+      <div class="direction-name" style="color:${color}">${d.name}</div>
+      ${d.trams.length === 0 ? '<div style="color:var(--muted);font-size:13px">Fin de service</div>' :
+        d.trams.map((t, i) => {
+          const diff = t - totalMin;
+          const [cls, lbl] = waitLabel(diff);
+          return `<div class="next-tram">
+            <div class="tram-time">${minToTime(t)}</div>
+            <div class="tram-wait ${cls}">${lbl}</div>
+          </div>`;
+        }).join('')}
+    </div>
+  `).join('');
+
+  // Info tiles
+  document.getElementById('info-grid').innerHTML = `
+    <div class="info-tile">
+      <div class="info-tile-label">Distance</div>
+      <div class="info-tile-value" style="color:${color}">${line.km}</div>
+      <div class="info-tile-sub">Longueur totale</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-label">Arrêts</div>
+      <div class="info-tile-value" style="color:${color}">${line.stops}</div>
+      <div class="info-tile-sub">Stations</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-label">Durée</div>
+      <div class="info-tile-value" style="color:${color}">${line.duration}</div>
+      <div class="info-tile-sub">Trajet complet</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-label">1er départ</div>
+      <div class="info-tile-value" style="color:${color}">${line.firstA}</div>
+      <div class="info-tile-sub">Depuis ${line.termA}</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-label">Dernier</div>
+      <div class="info-tile-value" style="color:${color}">${line.lastA}</div>
+      <div class="info-tile-sub">Depuis ${line.termA}</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-label">Ticket</div>
+      <div class="info-tile-value" style="color:${color}">6 MAD</div>
+      <div class="info-tile-sub">Par trajet</div>
+    </div>
+  `;
+
+  // Schedule
+  document.getElementById('sched-title').textContent = `Planning ${key}`;
+  document.getElementById('freq-badge').textContent = `Fréquence: ${line.freq}`;
+
+  const rows = line.schedule.map(s => {
+    const fromMin = timeToMin(s.from);
+    const toMin = timeToMin(s.to);
+    let cls = 'upcoming';
+    if (totalMin >= fromMin && totalMin < toMin) cls = 'active';
+    else if (totalMin >= toMin) cls = 'past';
+    const statusLabel = cls === 'active' ? 'Actuel' : cls === 'upcoming' ? 'À venir' : 'Passé';
+    return `<div class="schedule-row ${cls}" style="--line-color:${color}; ${cls === 'active' ? 'color:'+color : ''}">
+      <div class="sched-time">${s.from}</div>
+      <div class="sched-period">${s.label}</div>
+      <div class="sched-freq">${s.freq}</div>
+      <div class="sched-status ${cls === 'active' ? 'active' : 'upcoming'}" style="${cls==='past'?'opacity:0.3':''}">${statusLabel}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('schedule-rows').innerHTML = rows;
+
+  // Stops
+  document.getElementById('stops-header').textContent = `Stations ${key} (${line.stations.length} affichées)`;
+  document.getElementById('stops-list').innerHTML = line.stations.map(s => `
+    <div class="stop-row">
+      <div class="stop-dot" style="border-color:${color}"></div>
+      <div class="stop-name">${s.name}</div>
+      ${s.interchange ? `<div class="stop-interchange">↔ ${s.interchange}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function selectLine(key) {
+  currentLine = key;
+  document.querySelectorAll('.line-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.line === key);
+  });
+  renderLine(key);
+}
+
+function updateClock() {
+  const now = new Date();
+  const h = pad(now.getHours()), m = pad(now.getMinutes()), s = pad(now.getSeconds());
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const months = ['JAN','FEV','MAR','AVR','MAI','JUN','JUL','AOU','SEP','OCT','NOV','DEC'];
+  document.getElementById('clock-date').textContent =
+    `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} · CASABLANCA`;
+}
+
+// Init
+updateClock();
+renderLine('T1');
+
+// Updates
+setInterval(() => {
+  updateClock();
+  renderLine(currentLine);
+}, 1000);
+</script>
+</body>
+</html>
